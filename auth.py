@@ -1,4 +1,3 @@
-# auth.py
 import json
 import os
 import hashlib
@@ -14,7 +13,6 @@ def hash_password(password, salt=None):
     return f"{salt}${password_hash}"
 
 def verify_password(password, hashed_password):
-    """驗證密碼是否正確"""
     try:
         salt, stored_hash = hashed_password.split('$')
         password_hash = hashlib.sha256((password + salt).encode()).hexdigest()
@@ -23,7 +21,6 @@ def verify_password(password, hashed_password):
         return False
 
 def load_users():
-    """載入用戶資料"""
     if not os.path.exists(USER_FILE):
         with open(USER_FILE, "w", encoding='utf-8') as f:
             json.dump({}, f)
@@ -36,7 +33,6 @@ def load_users():
         return {}
 
 def save_users(users):
-    """保存用戶資料"""
     try:
         with open(USER_FILE, "w", encoding='utf-8') as f:
             json.dump(users, f, indent=4, ensure_ascii=False)
@@ -46,7 +42,6 @@ def save_users(users):
         return False
 
 def validate_input(username, password):
-    """驗證輸入是否有效"""
     if not username or not password:
         return False, "用戶名和密碼不能為空"
     
@@ -64,14 +59,12 @@ def validate_input(username, password):
 
 def register_user(username, password):
     """註冊新用戶"""
-    # 驗證輸入
     is_valid, error_msg = validate_input(username, password)
     if not is_valid:
         return False, error_msg
     
     users = load_users()
     
-    # 檢查用戶是否已存在
     if username in users:
         return False, "用戶名稱已存在"
     
@@ -89,31 +82,25 @@ def register_user(username, password):
 
 def login_user(username, password):
     """用戶登入"""
-    # 驗證輸入
     if not username or not password:
         return False, "用戶名和密碼不能為空"
     
     users = load_users()
     
-    # 檢查用戶是否存在
     if username not in users:
         return False, "用戶不存在"
     
-    # 驗證密碼
     stored_password = users[username]["password"]
     
-    # 兼容舊的密碼格式（純哈希）
+
     if '$' not in stored_password:
-        # 舊格式：直接比較哈希值（不安全，但為了兼容性）
         if stored_password == hashlib.sha256(password.encode()).hexdigest():
-            # 升級為新格式
             users[username]["password"] = hash_password(password)
             save_users(users)
             return True, "登入成功"
         else:
             return False, "密碼錯誤"
     else:
-        # 新格式：使用鹽值驗證
         if verify_password(password, stored_password):
             return True, "登入成功"
         else:
